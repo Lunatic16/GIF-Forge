@@ -34,7 +34,7 @@ GIF Forge is a minimal, dark-themed Electron desktop application designed to con
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/gif-converter.git
+git clone https://github.com/Lunatic16/gif-converter.git
 cd gif-converter
 ```
 
