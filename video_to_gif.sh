@@ -19,6 +19,7 @@
 #   FFmpeg must be installed. Install with:
 #     macOS:   brew install ffmpeg
 #     Ubuntu:  sudo apt install ffmpeg
+#     Fedora:  sudo dnf install ffmpeg
 #     Windows: https://ffmpeg.org/download.html
 # =============================================================================
 
