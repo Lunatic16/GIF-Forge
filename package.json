@@ -1,0 +1,12 @@
+{
+  "name": "video-to-gif",
+  "version": "1.0.0",
+  "description": "Video to Animated GIF Converter",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
