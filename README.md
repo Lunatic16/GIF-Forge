@@ -60,7 +60,7 @@ npm start
 │   ├── main.js       # Main process, Electron lifecycle, and FFmpeg execution
 │   └── preload.js    # Context bridge for secure inter-process communication
 ├── package.json      # Dependencies and scripts
-└── video_to_gif.sh   # Bash conversion script
+└── video_to_gif.sh   # Standalone bash conversion script
 ```
 
 ### Execution Flow
