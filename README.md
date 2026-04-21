@@ -39,6 +39,10 @@ GIF Forge is a lightweight, client-side web application designed for fast, brows
 
 If you haven't already, ensure you have the files in your local directory.
 
+```bash
+git clone https://github.com/Lunatic16/GIF-Forge.git
+```
+
 ### 2. Start the Development Server
 
 The application requires specific security headers (`COOP` and `COEP`) to enable `SharedArrayBuffer` for the FFmpeg WASM module. Use the provided Node.js server:
