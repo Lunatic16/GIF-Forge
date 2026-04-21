@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIF Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --bg2: #161618;
+    --bg3: #1e1e21;
+    --border: #2a2a2e;
+    --border2: #3a3a40;
+    --text: #e8e8ea;
+    --muted: #66666e;
+    --accent: #c8f135;
+    --accent2: #a8cc20;
+    --danger: #ff4f4f;
+    --warn: #f0a32a;
+    --success: #4fc87a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+    --hdr: 50px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    height: var(--hdr);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.07em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.7); }
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 2px 6px;
+    letter-spacing: 0.07em;
+  }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .status-pill.ready      { border-color: var(--success); color: var(--success); }
+  .status-pill.loading    { border-color: var(--warn);    color: var(--warn); }
+  .status-pill.converting { border-color: var(--accent);  color: var(--accent); }
+  .status-pill.error      { border-color: var(--danger);  color: var(--danger); }
+
+  /* ── Layout ── */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     LEFT PANEL — fixed, no scroll
+  ══════════════════════════════════════════ */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--hdr));
+    overflow: hidden;
+    padding: 12px 14px 10px;
+  }
+
+  /* ── File drop zone ── */
+  .drop-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: 6px;
+    padding: 11px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .drop-zone:hover    { border-color: var(--accent); background: rgba(200,241,53,0.03); }
+  .drop-zone.dragover { border-color: var(--accent); background: rgba(200,241,53,0.06); border-style: solid; }
+
+  .drop-inner { display: flex; align-items: center; gap: 9px; }
+  .drop-inner svg { opacity: 0.3; flex-shrink: 0; }
+  .drop-main { font-size: 11.5px; font-weight: 500; color: var(--text); }
+  .drop-sub  { font-size: 9.5px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+
+  /* File chip (shown after file loaded) */
+  .file-chip {
+    display: none;
+    align-items: center;
+    gap: 9px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 9px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.12s;
+  }
+  .file-chip:hover { border-color: var(--border2); }
+
+  .file-chip-thumb {
+    width: 44px; height: 28px;
+    border-radius: 3px;
+    background: var(--bg2);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .file-chip-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .file-chip-info { flex: 1; min-width: 0; }
+  .file-chip-name {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-chip-meta { font-family: var(--mono); font-size: 8.5px; color: var(--muted); margin-top: 2px; }
+  .file-chip-change {
+    font-family: var(--mono); font-size: 8.5px; color: var(--muted);
+    border: 1px solid var(--border2); border-radius: 3px; padding: 2px 5px; flex-shrink: 0;
+  }
+
+  #fileInput { display: none; }
+
+  /* ── Divider ── */
+  .div { height: 1px; background: var(--border); margin: 10px 0; flex-shrink: 0; }
+
+  /* ── Section label ── */
+  .sec {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+    flex-shrink: 0;
+  }
+
+  /* ── Row / col layout ── */
+  .row { display: flex; gap: 8px; margin-bottom: 7px; flex-shrink: 0; }
+  .col { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+
+  .lbl { font-size: 9px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+
+  input[type=text], input[type=number] {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 7px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.12s;
+  }
+  input[type=text]:focus, input[type=number]:focus { border-color: var(--accent); }
+
+  /* ── Toggle group ── */
+  .tog-group { display: flex; gap: 3px; }
+  .tog {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 5px 2px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    user-select: none;
+  }
+  .tog:hover { border-color: var(--border2); color: var(--text); }
+  .tog.active { background: var(--accent); border-color: var(--accent); color: #0e0e0f; font-weight: 500; }
+
+  /* ── Slider row ── */
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 7px;
+    flex-shrink: 0;
+  }
+  .slider-lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    width: 48px;
+    flex-shrink: 0;
+  }
+  .slider-val {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text);
+    font-weight: 500;
+    width: 34px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 2px;
+    background: var(--border2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  /* ── Checkboxes ── */
+  .checks { display: flex; gap: 14px; flex-shrink: 0; }
+  .check-row {
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    cursor: pointer; transition: color 0.1s;
+  }
+  .check-row:hover { color: var(--text); }
+  .check-row input[type=checkbox] { width: 12px; height: 12px; accent-color: var(--accent); cursor: pointer; }
+
+  .spacer { flex: 1; min-height: 0; }
+
+  /* ── Action bar ── */
+  .action-bar {
+    display: flex;
+    gap: 7px;
+    flex-shrink: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-convert {
+    flex: 1;
+    background: var(--accent);
+    color: #0e0e0f;
+    border: none;
+    border-radius: 5px;
+    font-family: var(--display);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-convert:hover   { background: var(--accent2); }
+  .btn-convert:active  { transform: scale(0.98); }
+  .btn-convert:disabled { background: var(--border2); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  .btn-download {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    display: none;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .btn-download:hover { border-color: var(--accent); background: rgba(200,241,53,0.05); }
+
+  .spinner {
+    width: 13px; height: 13px;
+    border: 2px solid rgba(14,14,15,0.2);
+    border-top-color: #0e0e0f;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══════════════════════════════════════════
+     RIGHT PANEL
+  ══════════════════════════════════════════ */
+  .panel-right {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--hdr));
+    overflow: hidden;
+  }
+
+  .preview-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 0;
+  }
+
+  .preview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.18;
+  }
+
+  .preview-empty-icon {
+    width: 44px; height: 44px;
+    border: 1.5px solid currentColor;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+  }
+
+  .preview-empty-text {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+
+  #gifPreview {
+    display: none;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    object-fit: contain;
+  }
+
+  .gif-meta {
+    margin-top: 10px;
+    display: flex;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* ── Log panel ── */
+  .log-panel {
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    height: 80px;
+    overflow-y: auto;
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    line-height: 1.65;
+    flex-shrink: 0;
+  }
+
+  .log-line          { color: var(--muted); }
+  .log-line.info     { color: var(--text); }
+  .log-line.success  { color: var(--success); }
+  .log-line.error    { color: var(--danger); }
+  .log-line.warn     { color: var(--warn); }
+  .log-line.progress { color: var(--accent); }
+
+  /* ── Progress bar ── */
+  .progress-bar-wrap { height: 2px; background: var(--border); flex-shrink: 0; }
+  .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .fadein { animation: fadeIn 0.25s ease forwards; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot" id="statusDot"></div>
+    GIF FORGE
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="status-pill" id="statusPill">initializing</span>
+    <span class="badge">ffmpeg.wasm</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ LEFT PANEL ══ -->
+  <div class="panel-left">
+
+    <!-- Drop zone (before file loaded) -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-inner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="14" height="18" rx="2"/>
+          <path d="M10 10l5 3.5-5 3.5V10z"/>
+          <path d="M17 7h4M19 5v4"/>
+        </svg>
+        <div>
+          <div class="drop-main">Drop video or click to browse</div>
+          <div class="drop-sub">mp4 · mov · mkv · webm · avi</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File chip (after file loaded) -->
+    <div class="file-chip" id="fileChip">
+      <div class="file-chip-thumb">
+        <video id="thumbVideo" muted preload="metadata"></video>
+      </div>
+      <div class="file-chip-info">
+        <div class="file-chip-name" id="chipName">—</div>
+        <div class="file-chip-meta" id="chipMeta">—</div>
+      </div>
+      <span class="file-chip-change">change</span>
+    </div>
+
+    <input type="file" id="fileInput" accept="video/*">
+
+    <div class="div"></div>
+
+    <!-- Trim -->
+    <div class="sec">Trim</div>
+    <div class="row">
+      <div class="col">
+        <div class="lbl">Start time</div>
+        <input type="text" id="start" placeholder="00:00:00">
+      </div>
+      <div class="col">
+        <div class="lbl">Duration (s)</div>
+        <input type="number" id="duration" placeholder="full" min="0.1" step="0.5">
+      </div>
+    </div>
+
+    <div class="div"></div>
+
+    <!-- Output -->
+    <div class="sec">Output</div>
+
+    <div class="row">
+      <div class="col">
+        <div class="lbl">Quality</div>
+        <div class="tog-group" id="qualGroup">
+          <div class="tog" data-val="low">low</div>
+          <div class="tog active" data-val="medium">medium</div>
+          <div class="tog" data-val="high">high</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="lbl">Loop</div>
+        <div class="tog-group" id="loopGroup">
+          <div class="tog active" data-val="0">∞</div>
+          <div class="tog" data-val="1">×1</div>
+          <div class="tog" data-val="2">×2</div>
+          <div class="tog" data-val="3">×3</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-wrap">
+      <span class="slider-lbl">Width (px)</span>
+      <input type="range" id="width" min="120" max="960" step="8" value="480"
+        oninput="document.getElementById('widthVal').textContent=this.value">
+      <span class="slider-val" id="widthVal">480</span>
+    </div>
+
+    <div class="slider-wrap">
+      <span class="slider-lbl">FPS</span>
+      <input type="range" id="fps" min="5" max="30" step="1" value="15"
+        oninput="document.getElementById('fpsVal').textContent=this.value">
+      <span class="slider-val" id="fpsVal">15</span>
+    </div>
+
+    <div class="div"></div>
+
+    <!-- Advanced -->
+    <div class="sec">Advanced</div>
+
+    <div class="row">
+      <div class="col">
+        <div class="lbl">Speed ×</div>
+        <input type="text" id="speed" placeholder="1.0">
+      </div>
+      <div class="col">
+        <div class="lbl">Crop (WxH+X+Y)</div>
+        <input type="text" id="crop" placeholder="640x360+0+0">
+      </div>
+    </div>
+
+    <div class="checks" style="margin-top:5px">
+      <label class="check-row"><input type="checkbox" id="chkReverse"> reverse</label>
+      <label class="check-row"><input type="checkbox" id="chkDither" checked> dithering</label>
+    </div>
+
+    <div class="spacer"></div>
+
+    <!-- Convert / Download -->
+    <div class="action-bar">
+      <button class="btn-convert" id="btnConvert" disabled>
+        <span class="spinner" id="spinner"></span>
+        <span id="btnLabel">CONVERT</span>
+      </button>
+      <button class="btn-download" id="btnDownload">↓ save gif</button>
+    </div>
+
+  </div>
+
+  <!-- ══ RIGHT PANEL ══ -->
+  <div class="panel-right">
+
+    <div class="preview-area">
+      <div class="preview-empty" id="emptyState">
+        <div class="preview-empty-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="2" width="20" height="20" rx="3"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="preview-empty-text">output appears here</div>
+      </div>
+      <img id="gifPreview" alt="GIF preview">
+      <div class="gif-meta" id="gifMeta" style="display:none">
+        <span id="metaGifSize">—</span>
+        <span id="metaGifDims">—</span>
+        <span id="metaGifFps">—</span>
+      </div>
+    </div>
+
+    <div class="log-panel" id="logPanel"></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+  </div>
+
+</main>
+
+<script src="lib/ffmpeg-all.js"></script>
+<script>
+'use strict';
+
+let ffmpeg = null, videoFile = null, gifBlob = null, converting = false;
+const $ = id => document.getElementById(id);
+
+// ── Toggle groups ──────────────────────────────────────────────────────────
+document.querySelectorAll('.tog-group').forEach(group => {
+  group.querySelectorAll('.tog').forEach(tog => {
+    tog.addEventListener('click', () => {
+      group.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
+      tog.classList.add('active');
+    });
+  });
+});
+function getToggle(id) {
+  const a = document.querySelector(`#${id} .tog.active`);
+  return a ? a.dataset.val : null;
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function log(msg, type = 'log') {
+  const el = document.createElement('div');
+  el.className = 'log-line ' + type;
+  el.textContent = new Date().toLocaleTimeString('en', { hour12: false }) + '  ' + msg;
+  $('logPanel').appendChild(el);
+  $('logPanel').scrollTop = $('logPanel').scrollHeight;
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+function setStatus(s) {
+  $('statusPill').textContent = s;
+  $('statusPill').className = 'status-pill' + ({ ready: ' ready', 'loading wasm': ' loading', converting: ' converting', error: ' error' }[s] || '');
+  $('statusDot').style.background = { ready: 'var(--success)', 'loading wasm': 'var(--warn)', converting: 'var(--accent)', error: 'var(--danger)' }[s] || 'var(--muted)';
+}
+
+// ── FFmpeg init ────────────────────────────────────────────────────────────
+async function initFFmpeg() {
+  setStatus('loading wasm');
+  log('Loading FFmpeg WASM…', 'warn');
+  try {
+    const FFmpeg = window.__FFmpeg;
+    if (!FFmpeg) throw new Error('FFmpeg bundle missing — check lib/ffmpeg-all.js');
+    ffmpeg = new FFmpeg();
+    ffmpeg.on('log', ({ message }) => {
+      if (!message.trim() || message.includes('Last message repeated')) return;
+      log(message);
+    });
+    ffmpeg.on('progress', ({ progress, time }) => {
+      const pct = Math.min(100, Math.round(progress * 100));
+      $('progressBar').style.width = pct + '%';
+      if (pct > 0) log(`Progress: ${pct}%  (${(time / 1e6).toFixed(1)}s)`, 'progress');
+    });
+    const toBlobURL = window.__toBlobURL;
+    const coreURL = await toBlobURL('lib/core/ffmpeg-core.js', 'text/javascript');
+    const wasmURL = await toBlobURL('lib/core/ffmpeg-core.wasm', 'application/wasm');
+    const workerURL = URL.createObjectURL(new Blob([await (await fetch('lib/worker.js')).text()], { type: 'text/javascript' }));
+    await ffmpeg.load({ classWorkerURL: workerURL, coreURL, wasmURL });
+    setStatus('ready');
+    log('FFmpeg ready ✓', 'success');
+    if (videoFile) $('btnConvert').disabled = false;
+  } catch (err) {
+    setStatus('error');
+    log('Failed: ' + err.message, 'error');
+  }
+}
+
+// ── File handling ──────────────────────────────────────────────────────────
+const dropZone = $('dropZone'), fileChip = $('fileChip'), fileInput = $('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileChip.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => fileInput.files[0] && loadFile(fileInput.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  f && f.type.startsWith('video/') ? loadFile(f) : log('Please drop a video file.', 'error');
+});
+
+function loadFile(file) {
+  videoFile = file;
+  dropZone.style.display = 'none';
+  fileChip.style.display = 'flex';
+  $('chipName').textContent = file.name;
+  const vid = $('thumbVideo');
+  vid.src = URL.createObjectURL(file);
+  vid.addEventListener('loadedmetadata', () => {
+    $('chipMeta').textContent = `${fmtDur(vid.duration)}  ·  ${vid.videoWidth}×${vid.videoHeight}  ·  ${fmtBytes(file.size)}`;
+  }, { once: true });
+  if (ffmpeg && ffmpeg.loaded) $('btnConvert').disabled = false;
+  log(`Loaded: ${file.name} (${fmtBytes(file.size)})`, 'info');
+}
+
+// ── Conversion ─────────────────────────────────────────────────────────────
+$('btnConvert').addEventListener('click', async () => {
+  if (!videoFile || !ffmpeg || !ffmpeg.loaded || converting) return;
+  converting = true;
+  setStatus('converting');
+  $('btnConvert').disabled = true;
+  $('btnLabel').textContent = 'CONVERTING…';
+  $('spinner').style.display = 'block';
+  $('btnDownload').style.display = 'none';
+  $('progressBar').style.width = '0%';
+  $('gifPreview').style.display = 'none';
+  $('emptyState').style.display = 'flex';
+  $('gifMeta').style.display = 'none';
+
+  try {
+    const quality  = getToggle('qualGroup');
+    const fps      = parseInt($('fps').value);
+    const width    = parseInt($('width').value);
+    const loop     = parseInt(getToggle('loopGroup'));
+    const start    = $('start').value.trim();
+    const dur      = $('duration').value.trim();
+    const speed    = parseFloat($('speed').value) || 1.0;
+    const crop     = $('crop').value.trim();
+    const reverse  = $('chkReverse').checked;
+    const dither   = $('chkDither').checked;
+    const { maxColors, ditherMode } = qualParams(quality, dither);
+
+    log(`Starting: ${width}px @ ${fps}fps  quality=${quality}`, 'info');
+
+    const ext = videoFile.name.split('.').pop() || 'mp4';
+    await ffmpeg.writeFile(`input.${ext}`, await window.__fetchFile(videoFile));
+
+    const filters = [];
+    if (crop)        filters.push(`crop=${crop.replace('x', ':').replace(/\+/g, ':')}`);
+    if (speed !== 1) filters.push(`setpts=${(1 / speed).toFixed(6)}*PTS`);
+    filters.push(`scale=${width}:-2:flags=lanczos`, `fps=${fps}`);
+    if (reverse)     filters.push('reverse');
+    const vf = filters.join(',');
+    const ta = [...(start ? ['-ss', start] : []), ...(dur ? ['-t', dur] : [])];
+
+    log('Step 1/2 — generating palette…', 'info');
+    await ffmpeg.exec([...ta, '-i', `input.${ext}`, '-vf', `${vf},palettegen=max_colors=${maxColors}:stats_mode=diff`, '-y', 'palette.png']);
+    log('Palette done ✓', 'success');
+
+    log('Step 2/2 — rendering GIF…', 'info');
+    await ffmpeg.exec([...ta, '-i', `input.${ext}`, '-i', 'palette.png', '-lavfi', `${vf} [x]; [x][1:v] paletteuse=dither=${ditherMode}`, '-loop', String(loop), '-y', 'output.gif']);
+    log('Render done ✓', 'success');
+
+    const data = await ffmpeg.readFile('output.gif');
+    gifBlob = new Blob([data.buffer], { type: 'image/gif' });
+    const url = URL.createObjectURL(gifBlob);
+
+    $('gifPreview').onload = () => {
+      $('emptyState').style.display = 'none';
+      $('gifPreview').style.display = 'block';
+      $('gifPreview').classList.add('fadein');
+      $('gifMeta').style.display = 'flex';
+      $('metaGifSize').textContent = fmtBytes(gifBlob.size);
+      $('metaGifDims').textContent = `${$('gifPreview').naturalWidth}×${$('gifPreview').naturalHeight}px`;
+      $('metaGifFps').textContent = `${fps} fps`;
+    };
+    $('gifPreview').src = url;
+
+    $('progressBar').style.width = '100%';
+    setTimeout(() => $('progressBar').style.width = '0%', 1200);
+    $('btnDownload').style.display = 'flex';
+    setStatus('ready');
+    log(`Done! ${fmtBytes(gifBlob.size)}`, 'success');
+
+    for (const f of [`input.${ext}`, 'palette.png', 'output.gif'])
+      try { await ffmpeg.deleteFile(f); } catch {}
+
+  } catch (err) {
+    log('Error: ' + err.message, 'error');
+    setStatus('error');
+  }
+
+  converting = false;
+  $('btnConvert').disabled = false;
+  $('btnLabel').textContent = 'CONVERT';
+  $('spinner').style.display = 'none';
+});
+
+// ── Download ───────────────────────────────────────────────────────────────
+$('btnDownload').addEventListener('click', () => {
+  if (!gifBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(gifBlob);
+  a.download = (videoFile ? videoFile.name.replace(/\.[^/.]+$/, '') : 'output') + '.gif';
+  a.click();
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function qualParams(q, dither) {
+  const m = { low: [64, 'bayer:bayer_scale=5'], medium: [128, 'bayer:bayer_scale=3'], high: [256, 'floyd_steinberg'] };
+  const [maxColors, ditherMode] = m[q] || m.medium;
+  return { maxColors, ditherMode: dither ? ditherMode : 'none' };
+}
+function fmtBytes(b) {
+  return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB';
+}
+function fmtDur(s) {
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+}
+
+initFFmpeg();
+</script>
+</body>
+</html>
