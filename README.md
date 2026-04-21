@@ -99,4 +99,4 @@ node server.mjs 3000
 If the console displays an error related to `SharedArrayBuffer` or headers, ensure the server is running and your browser is not blocking the security headers.
 
 ### High initial load time
-The first time you load the application, the browser must download the `ffmpeg-core.wasm` binary (~31MB). This is normal; subsequent loads should be faster if cached.
+The first time you load the application, the browser must download the `ffmpeg-core.wasm` binary (~36MB). This is normal; subsequent loads should be faster if cached.
