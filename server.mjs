@@ -78,7 +78,7 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log('  │  SharedArrayBuffer enabled ✓            │');
   console.log('  └─────────────────────────────────────────┘');
   console.log('');
-  console.log('  Note: First load fetches ~31MB WASM binary.');
+  console.log('  Note: First load fetches ~36MB WASM binary.');
   console.log('  Press Ctrl+C to stop.');
   console.log('');
 });
