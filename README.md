@@ -63,7 +63,7 @@ Once the server is running, open your browser and navigate to:
 │   │   └── ffmpeg-core.wasm
 │   ├── ffmpeg-all.js
 │   ├── worker.js
-│   └── ffmpeg-wasm-binaries.tar.xz  <-- ESM and UMD versions
+├── compiled_ffpmeg_wasm_esm-umd.tar.xz
 ├── index.html
 ├── server.mjs
 ├── screenshot.png
