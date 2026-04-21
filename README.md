@@ -4,12 +4,22 @@
 
 GIF Forge is a lightweight, client-side web application designed for fast, browser-based video-to-GIF conversion using `ffmpeg.wasm`. By leveraging WebAssembly, it allows users to perform media processing locally without needing to upload videos to a server.
 
+## How It Works
+
+1. **Upload:** Select a video file from your local machine.
+2. **Process:** Once loaded, the app uses `ffmpeg.wasm` to transcode the video stream. You can customize conversion parameters such as frame rate and resolution.
+3. **Download:** Once the processing is complete, the generated GIF is made available for download directly from your browser's cache.
+
 ## Key Features
 
-- **Local Processing:** Convert videos to GIFs directly in your browser.
-- **Privacy-Focused:** No video data is uploaded to a remote server.
-- **High Performance:** Uses `ffmpeg.wasm` for efficient media transcoding.
-- **Flexible Integration:** Includes both ESM and UMD versions of `ffmpeg.wasm` binaries.
+- **Local Processing:** Convert videos to GIFs entirely within your browser using WebAssembly. No data is sent to external servers.
+- **Privacy-First:** Your video files never leave your computer, ensuring complete data sovereignty and privacy.
+- **High Performance:** Leverages multi-threaded WebAssembly to achieve fast transcoding speeds comparable to native desktop applications.
+- **Customizable Output:** Tailor your GIFs with adjustable settings:
+    - **Resolution:** Scale the output dimensions to fit your needs.
+    - **Frame Rate (FPS):** Balance between quality and file size.
+    - **Duration:** Trim specific sections of your video.
+- **Flexible Integration:** Ships with both ESM and UMD versions of the `ffmpeg.wasm` binaries to support various frontend project structures.
 
 ## Tech Stack
 
